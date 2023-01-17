@@ -1,7 +1,7 @@
 <?php
 
 declare (strict_types=1);
-
+require_once __DIR__ .'/funktioner.php';
 /**
  * Läs av rutt-information och anropa funktion baserat på angiven rutt
  * @param Route $route Rutt-information
@@ -37,7 +37,23 @@ function activities(Route $route, array $postData): Response {
  * @return Response
  */
 function hamtaAlla(): Response {
-    return new Response("Hämta alla aktiviteter", 200);
+    //Koppla mot databasen
+    $db=connectDb();
+   
+    //Hämta alla poster från tabelen
+    $resultat=$db->query("SELECT id, category from categories");
+
+    //Lägga in posterna i en array
+    $retur=[];
+    while($row=$resultat->fetch()){
+        $post=new stdClass();
+        $post->id=$row['id'];
+        $post->category=$row['category'];
+        $retur[]=$post;
+    }
+
+    //Returnera svaret
+    return new Response($retur, 200);
 }
 
 /**

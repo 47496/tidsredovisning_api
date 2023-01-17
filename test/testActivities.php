@@ -1,7 +1,7 @@
 <?php
 
 declare (strict_types=1);
-
+require_once '../src/activities.php';
 /**
  * Funktion för att testa alla aktiviteter
  * @return string html-sträng med resultatet av alla tester
@@ -37,7 +37,26 @@ function testActivityFunction(string $funktion): string {
  */
 function test_HamtaAllaAktiviteter(): string {
     $retur = "<h2>test_HamtaAllaAktiviteter</h2>";
-    $retur .= "<p class='ok'>Testar hämta alla aktiviteter</p>";
+    try {
+        $svar=hamtaAlla();
+
+        //kontrollerar statuskoden
+        if(!$svar->getStatus()==200) {
+            $retur .="<p class='error'> Felaktig statuskod förväntade 200 fick {$svar->getStatus()}</p>";
+        } else {
+            $retur .="<p class='ok'>Korrekt statuskod 200</p>";
+        }
+    
+        //kontrollerar att ingen kategori är tom
+        foreach ($svar->getContent() as $kategori){
+            if($kategori->category==="") {
+                $retur .="<p class='error'> Tom aktivitet!</p>";
+            }
+        }
+    } catch (Exception $ex) {
+        $retur .="<p class='error'>Något gick fel, meddelandet säger:{$ex->getMessage()}</p>";
+    }
+
     return $retur;
 }
 
