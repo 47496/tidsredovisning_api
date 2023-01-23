@@ -290,6 +290,60 @@ function test_UppdateraAktivitet(): string {
  */
 function test_RaderaAktivitet(): string {
     $retur = "<h2>test_RaderaAktivitet</h2>";
-    $retur .= "<p class='ok'>Testar radera aktivitet</p>";
+try{
+        // Testa med ogiltig id (-1)
+        $svar=radera(-1);//prova radera
+        if($svar->getStatus()===400) {
+            $retur .="<p class='ok'>radera aktivitet med ogiltigt id (-1) misslyckades som förväntat</p>";
+        } else {
+            $retur .="<p class='error'>radera aktivitet med ogiltigt id (-1) returnerade" 
+                   ." {$svar->getStatus()} istället för förväntat 400</p>";
+        }
+
+        // Testa med felaktigt id (sju)
+        $svar=radera((int)"sju");//prova radera
+        if($svar->getStatus()===400) {
+            $retur .="<p class='ok'>radera aktivitet med ogiltigt id (sju) misslyckades som förväntat</p>";
+        } else {
+            $retur .="<p class='error'>radera aktivitet med ogiltigt id (sju) returnerade" 
+                   ." {$svar->getStatus()} istället för förväntat 400</p>";
+        }
+
+        // Testa med obefintligt id (100)
+        $svar=radera(100);//prova uppdatera
+        if($svar->getStatus()=== 200 && $svar->getContent()->result===false) {
+            $retur .="<p class='ok'>radera aktivitet med obefintligt id (100) ger förväntat svar 200</p>";
+        } else {
+            $retur .="<p class='error'>radera aktivitet med obefintligt id (100) returnerade" 
+                   ." {$svar->getStatus()} istället för förväntat 400</p>";
+        }
+
+        // Testa radera nyskapat id
+        $db= connectDb();
+        $db->beginTransaction();//gör en transaktion för att inte lägga in massor i databsen
+        $nyPost=sparaNy("Nizze");//lagar ny post för att leka med
+        if ($nyPost->getStatus()!==200) {
+            throw new Exception("Skapa ny post misslyckades", 10001);
+        } 
+        $nyttID=(int) $nyPost->getContent()->id;//den nya postens id
+        $svar=radera($nyttID);
+        if($svar->getStatus()===200 && $svar->getContent()->result===true) {
+            $retur .="<p class='ok'>radera aktivitet med nyskapat id, lyckades som förväntat</p>";
+        } else {
+            $retur .="<p class='error'>radera aktivitet med nyskapat id, returnerade "
+            . "{$svar->getStatus()} istället för förväntat 200 </p>";
+        }
+        $retur .="</p>";
+        $db->rollBack();
+
+    }catch (Exception $ex) {
+        $db->rollBack();
+        if($ex->getCode()===10001){
+        $retur .="<p class='error'>skapa ny aktivitet misslyckades, radera går inte att testa!!!</p>";
+    } else {
+        $retur .="<p class='error'>Fel inträffade:<br>{$ex->getMessage()}</p>";
+    }
+    }
+    $retur .="</p>";
     return $retur;
 }

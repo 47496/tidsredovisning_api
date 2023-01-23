@@ -191,5 +191,35 @@ function uppdatera(int $id, string $aktivitet): Response {
  * @return Response
  */
 function radera(int $id): Response {
-    return new Response("Raderar aktivitet $id", 200);
+    // kontrollera ID
+    $kollaID= filter_var($id, FILTER_VALIDATE_INT);   
+    if (!$kollaID || $kollaID < 1) {
+        $out=new stdClass();
+        $out->error=["Felaktig indata", "$id är inget heltal"];
+        return new Response($out, 400 );
+    }
+    try {
+        // Koppla mot databas
+            $db=connectDb();
+        
+        // Skicka radera komando
+        $stmt=$db->prepare("DELETE FROM categories WHERE ID=:id");
+        $stmt->execute(["id"=>$kollaID]);
+        $antalPoster=$stmt->rowCount();
+
+        // Kontrollera databas-svar och skapa utdata-svar
+        $out=new stdClass();
+        if($antalPoster>0){
+            $out->result=true;
+            $out->message=["Radera lyckades", "$antalPoster post(er) raderades"];
+        } else {
+            $out->result=false;
+            $out->message=["Radera misslyckades", "inga poster raderades"];
+        }
+        return new Response($out);
+    } catch (Exception $ex) {
+        $out = new stdClass();
+        $out->error = ["Något gick fel vid radera", $ex->getMessage()];
+        return new Response($out, 400);
+    }
 }
