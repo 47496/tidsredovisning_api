@@ -155,16 +155,83 @@ function hamtaDatum(DateTimeInterface $from, DateTimeInterface $tom): Response {
  * @return Response
  */
 function hamtaEnskildUppgift(int $id): Response {
-    return new Response("Hämta task $id", 200);
+    // Kontrollera indata
+    $kollatID = filter_var($id, FILTER_VALIDATE_INT);
+    if (!$kollatID || $kollatID < 1) {
+        $out = new stdClass();
+        $out->error = ["Felaktig indata", "$id är inget giltigt heltal"];
+        return new Response($out, 400);
+    }
+    
+    // Koppla mot databas
+    $db= connectDb();
+    
+    // Förbered och exekvera SQL
+    $stmt=$db->prepare("SELECT t.id, activityId, date, time, description, activity "
+            . " FROM tasks t "
+            . " INNER JOIN activities a ON activityId=a.id "
+            . " WHERE t.id=:id ");
+    
+    $stmt->execute(["id"=>$kollatID]);
+    
+    // Returnera svaret
+    if($row=$stmt->fetch()) {
+        $out=new stdClass();
+        $out->id=$row["id"];
+        $out->activityId=$row["activityId"];
+        $out->date=$row["date"];
+        $out->time=$row["time"];
+        $out->description=$row["description"];
+        $out->activity=$row["activity"];
+        
+        return new Response($out);
+    } else {
+        $out=new stdClass();
+        $out->error=["Fel vid hämtning", "Inga poster returnerades"];
+        return new Response($out, 400);
+    }
+    
 }
-
 /**
  * Sparar en ny uppgiftspost
  * @param array $postData indata för uppgiften
  * @return Response
  */
 function sparaNyUppgift(array $postData): Response {
-    return new Response("Sparar ny task", 200);
+    // Kolla indata
+    $check=validateindata($postData);
+    if ($check!==""){
+        $out= new stdClass();
+        $out->error=["Felaktig indata", $check];
+        return new Response($out, 400);
+    }
+    
+    // Koppla till databas
+    $db=connectDb();
+    if(!isset($postData["description"])) {
+        $postData["description"]="";
+    }
+    // Förbered och exekvera SQL
+    $stmt=$db->prepare("INSERT INTO tasks (categoryId, Time, Date, Description)
+                        VALUE (:categoryId, :Time, :Date, :Description)");
+
+    $stmt->execute(["categoryId"=>$postData["activityId"], 
+                    "Time"=>$postData["time"], 
+                    "Date"=>$postData["date"], 
+                    "Description"=>$postData["description"]]);
+
+    // Kontrollera svar & skicka tillbaka utdata
+    $antalposter=$stmt->rowCount();
+    if($antalposter>0){
+        $out=new stdClass();
+        $out->id=$db->lastInsertId();
+        $out->message=["Spara ny Upggift lyckades"];
+        return new Response($out);
+    } else {
+        $out=new stdClass();
+        $out->error=["Spara ny uppgift misslyckades"];
+        return new Response($out, 400);
+    }
 }
 
 /**
@@ -184,4 +251,40 @@ function uppdateraUppgift(int $id, array $postData): Response {
  */
 function raderaUppgift(int $id): Response {
     return new Response("RaderaUppgiftr task $id", 200);
+}
+
+function validateindata(array $postData):string {
+    try{
+        // Kontrollera giltigt datum
+        if(!isset($postData["date"])) {
+            return "Datum saknas (date)";
+        }
+        $datum= DateTimeImmutable::createFromFormat("Y-m-d", $postData["date"]);
+        if (!$datum || $datum->format('Y-m-d')>date('Y-m-d')) {
+            return "Ogiltig datum (date)";
+        }
+
+        // Kontrollera giltigt tid
+        if(!isset($postData["time"])) {
+            return "Tid saknas (time)";
+        }
+        $tid=DateTimeImmutable::createFromFormat("H:i", $postData["time"]);
+        if (!$tid || $tid->format("H:i")>"08:00") {
+            return "Ogiltig tid (time)";
+        }
+
+        // Kontrollera aktivitetsid
+        $aktivitetsId=filter_var($postData["activityId"], FILTER_VALIDATE_INT);
+        if (!$aktivitetsId || $aktivitetsId<1) {
+            return "Ogiltigt aktivitetstid (activityId)";
+        }
+        $svar = hamtaEnskildAktivitet($aktivitetsId);
+        if($svar->getStatus()!=200){
+            return "Angivet aktivitetsid saknas";
+        }
+
+        return "";
+    } catch (Exception $exc) {
+    return $exc->getMessage();
+    }
 }
