@@ -2,6 +2,7 @@
 
 declare (strict_types=1);
 
+require_once __DIR__ . "./activities.php";
 /**
  * Hämtar en lista med alla uppgifter och tillhörande aktiviteter 
  * Beroende på indata returneras en sida eller ett datumintervall
@@ -211,6 +212,7 @@ function sparaNyUppgift(array $postData): Response {
     if(!isset($postData["description"])) {
         $postData["description"]="";
     }
+
     // Förbered och exekvera SQL
     $stmt=$db->prepare("INSERT INTO tasks (categoryId, Time, Date, Description)
                         VALUE (:categoryId, :Time, :Date, :Description)");
@@ -241,7 +243,57 @@ function sparaNyUppgift(array $postData): Response {
  * @return Response
  */
 function uppdateraUppgift(int $id, array $postData): Response {
-    return new Response("UppdateraUppgiftr task $id", 200);
+    // Kolla indata
+        // Kollar ID
+        $kollaID= filter_var($id, FILTER_VALIDATE_INT);   
+        if (!$kollaID || $kollaID < 1) {
+            $out=new stdClass();
+            $out->error=["Felaktig indata", "$id är inget heltal"];
+            return new Response($out, 400 );
+        }
+        
+        // Kollar task formdata
+        $check=validateindata($postData);
+        if ($check!==""){
+            $out= new stdClass();
+            $out->error=["Felaktig indata", $check];
+            return new Response($out, 400);
+        }
+            
+    try {
+    // Kopplar databas    
+    $db=connectDb();
+    if(!isset($postData["description"])) {
+        $postData["description"]="";
+    }
+
+    // Förbered och exekvera SQL
+    $stmt=$db->prepare("UPDATE tasks set 
+                    categoryID=:categoryId, 
+                    Time=:Time,
+                    Date=:Date, 
+                    Description=:Description 
+                    WHERE ID=:Id");
+
+    $stmt->execute(["categoryId"=>$postData["activityId"], 
+                    "Time"=>$postData["time"], 
+                    "Date"=>$postData["date"], 
+                    "Description"=>$postData["description"],
+                    "Id"=>$kollaID]);
+    $antalPoster=$stmt->rowCount();
+    // Kontrollera svar och skicka svar
+    $out = new stdClass();
+    if($antalPoster===0) {
+        $out->result = false;
+        $out->error=["uppdatering misslyckades", "0 poster uppdaterades"];
+    } else {
+        $out->result = true;
+        $out->message=["uppdatering lyckades", "$antalPoster poster uppdaterades"];
+    }
+    return new Response($out);
+    } catch (Exception $exc) {
+        return $exc->getMessage();
+    }
 }
 
 /**
@@ -250,7 +302,36 @@ function uppdateraUppgift(int $id, array $postData): Response {
  * @return Response
  */
 function raderaUppgift(int $id): Response {
-    return new Response("RaderaUppgiftr task $id", 200);
+    // Kolla indata
+    $kollatID = filter_var($id, FILTER_VALIDATE_INT);
+    if (!$kollatID || $kollatID < 1) {
+        $out = new stdClass();
+        $out->error = ["Felaktig indata", "$id är inget giltigt heltal"];
+        return new Response($out, 400);
+    }
+
+    // Koppla mot databas
+    $db=connectDb();
+    
+    // Förbered och exekvera sql
+    $stmt=$db->prepare("DELETE FROM tasks where id=:id");
+
+    $stmt->execute(["id"=>$kollatID]);
+    
+    // Skicka svar
+    $antalPoster=$stmt->rowCount();
+    if($antalPoster===0){
+        $out=new stdClass();
+        $out->result=false;
+        $out->message=["Radera post misslyckades", "inga poster raderades"];
+        return new Response($out);
+    } else {
+        $out=new stdClass();
+        $out->result=true;
+        $out->error=["Radera post lyckades", "$antalPoster poster raderades"];
+        return new Response($out);
+    }
+    
 }
 
 function validateindata(array $postData):string {

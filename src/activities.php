@@ -173,10 +173,10 @@ function uppdateraAktivitet(int $id, string $aktivitet): Response {
     $out = new stdClass();
     if($antalPoster>0) {
         $out->result = true;
-        $out->message=["Spara lyckades", "$antalPoster poster uppdateraAktivitetdes"];
+        $out->message=["Spara lyckades", "$antalPoster aktiviteter uppdaterades"];
     } else {
         $out->result = false;
-        $out->message=["Spara lyckades", "0 poster uppdateraAktivitetdes"];
+        $out->message=["Spara lyckades", "0 aktiviteter uppdaterades"];
     }
 
     return new Response($out, 200);
