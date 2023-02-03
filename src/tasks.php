@@ -168,9 +168,9 @@ function hamtaEnskildUppgift(int $id): Response {
     $db= connectDb();
     
     // Förbered och exekvera SQL
-    $stmt=$db->prepare("SELECT t.id, activityId, date, time, description, activity "
+    $stmt=$db->prepare("SELECT t.id, categoryId, date, time, description, category "
             . " FROM tasks t "
-            . " INNER JOIN activities a ON activityId=a.id "
+            . " INNER JOIN categories c ON categoryId=c.id "
             . " WHERE t.id=:id ");
     
     $stmt->execute(["id"=>$kollatID]);
@@ -179,11 +179,11 @@ function hamtaEnskildUppgift(int $id): Response {
     if($row=$stmt->fetch()) {
         $out=new stdClass();
         $out->id=$row["id"];
-        $out->activityId=$row["activityId"];
+        $out->activityId=$row["categoryId"];
         $out->date=$row["date"];
         $out->time=$row["time"];
         $out->description=$row["description"];
-        $out->activity=$row["activity"];
+        $out->activity=$row["category"];
         
         return new Response($out);
     } else {

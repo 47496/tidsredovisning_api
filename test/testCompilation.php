@@ -19,11 +19,41 @@ function allaCompilationTester(): string {
  * @return string html-sträng med information om resultatet av testen eller att testet inte fanns
  */
 function testCompilationFunction(string $funktion): string {
-    if (function_exists("test_$funktion")) {
-        return call_user_func("test_$funktion");
+    // Testa felaktig ordning på datum
+    $svar = hamtaSammanstallning(new DateTimeImmutable(), new DateTimeImmutable("1970-01-01"));
+    if ($svar->getStatus() === 400) {
+        $retur .= "<p class='ok'>Hämta sammanställning med felaktig ordning på datum returnerade 400 som förväntat</p>";
     } else {
-        return "<p class='error'>Funktionen $funktion kan inte testas.</p>";
+        $retur .= "<p class='error'>Hämta sammanställning med felaktig ordning på datum returnerade {$svar->getStatus()} "
+                . "istället för 400 som förväntat</p>";
     }
+
+    // Testa utan resultat
+    $svar = hamtaSammanstallning(new DateTimeImmutable("1970-01-01"), new DateTimeImmutable("1970-01-01"));
+    $retur = "<h2>test_HamtaSammanstallning</h2>";
+    if ($svar->getStatus() === 200) {
+        if ($svar->getContent()->tasks === []) {
+            $retur .= "<p class='ok'>Hämta sammanställning utan poster returnerade 200 och tom array som förväntat</p>";
+        } else {
+            $retur .= "<p class='error'>Hämta sammanställning utan poster returnerade "
+                    . print_r($svar->getContent()->tasks, true)
+                    . " istället för tom array som förväntat</p>";
+        }
+    } else {
+        $retur .= "<p class='error'>Hämta sammanställning  utan poster returnerade returnerade {$svar->getStatus()} "
+                . "istället för 200 som förväntat</p>";
+    }
+
+    // Testa ok
+    $svar = hamtaSammanstallning(new DateTimeImmutable("1970-01-01"), new DateTimeImmutable());
+    if ($svar->getStatus() === 200) {
+            $retur .= "<p class='ok'>Hämta sammanställning returnerade 200 som förväntat</p>";
+    } else {
+        $retur .= "<p class='error'>Hämta sammanställning returnerade {$svar->getStatus()} "
+                . "istället för 200 som förväntat</p>";
+    }
+
+    return $retur;
 }
 
 /**

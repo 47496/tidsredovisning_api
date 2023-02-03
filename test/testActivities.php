@@ -52,7 +52,7 @@ function test_HamtaAllaAktiviteter(): string {
                 $retur .="<p class='error'>Egenskapen id saknas</p>";
                 break;   
             }
-            if(!isset($kategori->category)) {
+            if(!isset($kategori->activity)) {
                 $retur .="<p class='error'>Egenskapen id saknas</p>";
                 break;   
             }

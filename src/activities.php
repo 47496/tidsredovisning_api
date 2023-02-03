@@ -49,7 +49,7 @@ function hamtaAllaAktiviteter(): Response {
     while($row=$resultat->fetch()){
         $post=new stdClass();
         $post->id=$row['id'];
-        $post->category=$row['category'];
+        $post->activity=$row['category'];
         $retur[]=$post;
     }
     $out= new stdClass;
