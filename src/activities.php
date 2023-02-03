@@ -105,7 +105,7 @@ function hamtaEnskildAktivitet(int $id): Response {
 function sparaNyAktivitet(string $aktivitet): Response {
     // kontrollera indata  
     $kontrolleradAktivitet=trim($aktivitet);
-    $kontrolleradAktivitet= filter_var($kontrolleradAktivitet, FILTER_SANITIZE_ENCODED);
+    $kontrolleradAktivitet= filter_var($kontrolleradAktivitet, FILTER_SANITIZE_SPECIAL_CHARS);
     if ($kontrolleradAktivitet==="") {
         $out=new stdClass();
         $out->error=["Fel vid spara", "Activity kan inte vara tom"];
@@ -155,7 +155,7 @@ function uppdateraAktivitet(int $id, string $aktivitet): Response {
     }
         // Kollar Aktivitet
     $kontrolleradAktivitet=trim($aktivitet);
-    $kontrolleradAktivitet= filter_var($kontrolleradAktivitet, FILTER_SANITIZE_ENCODED);
+    $kontrolleradAktivitet= filter_var($kontrolleradAktivitet, FILTER_SANITIZE_SPECIAL_CHARS);
     if ($kontrolleradAktivitet==="") {
         $out=new stdClass();
         $out->error=["Fel vid spara", "Activity kan inte vara tom"];

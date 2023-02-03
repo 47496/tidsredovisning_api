@@ -2,7 +2,7 @@
 
 declare (strict_types=1);
 
-require_once __DIR__ . "./activities.php";
+require_once __DIR__ . "/activities.php";
 /**
  * Hämtar en lista med alla uppgifter och tillhörande aktiviteter 
  * Beroende på indata returneras en sida eller ett datumintervall
